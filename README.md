@@ -11,7 +11,7 @@ streamlit run app.py
 
 ### GitHub Codespaces
 
-Open **Code → Codespaces → Create codespace on main**, allow the devcontainer to install dependencies, and run `streamlit run app.py --server.address 0.0.0.0 --server.port 8501`. Open forwarded port 8501 (private by default).
+Open **[Create a Codespace](https://github.com/codespaces/new?repo=1432964579)**, select branch `main`, and create the environment. The devcontainer installs dependencies and automatically starts Streamlit on port **8501**. Open the forwarded port (private by default). If the tab does not open, use the **PORTS** panel and select port `8501`. If necessary, launch manually with `bash scripts/launch.sh`; inspect `/tmp/antibot-streamlit.log` for errors.
 
 ## Seven workspaces
 
@@ -36,6 +36,6 @@ python -m pytest -q
 python -m compileall -q app.py fraudlab
 ```
 
-This repository includes a Codespaces devcontainer, GitHub Actions tests and MIT-licensed source code. Third-party dataset licenses are separate.
+**Verified on GitHub Actions (25 October 2026):** 10 tests passed, including headless Streamlit Command Center and Model Arena rendering. A separate live iPinYou ZIP test successfully downloaded the authentic archive, scanned 10,000 events, retained 4,000, produced 338 source groups and 3,656 distinct encoded IP keys; bot labels remained unknown. The live archive test can be rerun manually under GitHub Actions → Real iPinYou archive smoke test. This does not demonstrate a continuously hosted Codespace or a browser screenshot.\n\nThis repository includes a Codespaces devcontainer, GitHub Actions tests and MIT-licensed source code. Third-party dataset licenses are separate.
 
 Data references: https://huggingface.co/datasets/reczoo/iPinYou_x1 · https://contest.ipinyou.com/
