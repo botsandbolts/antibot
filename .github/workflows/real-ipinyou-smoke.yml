@@ -1,0 +1,46 @@
+name: Real iPinYou archive smoke test
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/real-ipinyou-smoke.yml'
+      - 'fraudlab/**'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+jobs:
+  real-dataset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install analysis dependencies
+        run: pip install -r requirements.txt
+      - name: Download and validate authentic iPinYou x1 archive
+        env:
+          HF_HUB_DOWNLOAD_TIMEOUT: "120"
+        run: |
+          python - <<'PY'
+          from fraudlab.data import load_ipinyou
+          from fraudlab.features import engineer_features
+          import pandas as pd
+          data, n_scanned = load_ipinyou(sample_size=4000, max_scan=10000, seed=42)
+          assert n_scanned == 10000, f"unexpected number of records: {n_scanned}"
+          assert len(data) == 4000, f"unexpected sampled size: {len(data)}"
+          assert data.publisher.nunique() > 1
+          assert data.campaign.nunique() > 1
+          assert data.ip_key.nunique() > 1
+          assert data.bot_label.isna().all(), "Real records must not acquire invented bot labels."
+          assert data.event_time.isna().all(), "Processed encoding cannot be trusted as wall-clock."
+          assert data.hour_bucket.astype(str).str.startswith('encoded:').all()
+          groups=engineer_features(data,entity="publisher",min_events=2)
+          assert len(groups)>0
+          assert groups.publisher_label.isna().all()
+          print("LIVE IPINYOU DATASET VERIFIED")
+          print("Scanned records:",n_scanned,"Retained:",len(data))
+          print("Traffic-source groups:",len(groups))
+          print("Distinct IP keys:",data.ip_key.nunique())
+          print("Bot labels: NONE (correct)")
+          PY
