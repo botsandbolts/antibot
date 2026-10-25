@@ -16,3 +16,17 @@ jobs:
         run: python -m compileall -q app.py fraudlab
       - name: Run tests
         run: python -m pytest -q
+      - name: Start actual Streamlit HTTP server and check health
+        run: |
+          python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > /tmp/streamlit.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8501/_stcore/health; then
+              echo "Streamlit HTTP server health: OK"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/streamlit.log
+          exit 1
