@@ -47,7 +47,6 @@ def make_demo(n=24000, seed=42):
     dev=rng.integers(0,14,n);dev[bot]=rng.integers(0,2,bot.sum())
     clicks=rng.random(n)<np.where(bot,.42,.032)
     sec=rng.integers(0,86400*10,n)
-    sec[bot & (rng.random(n)<.6)]=rng.integers(86400*7,86400*7+180,(bot & (rng.random(n)<.6)).sum()) if False else sec[bot & (np.zeros(n,dtype=bool))]
     dt=pd.Timestamp("2026-01-01",tz="UTC")+pd.to_timedelta(sec,unit="s")
     return pd.DataFrame({"click":clicks.astype(int),"publisher":[f"source-{x:03d}" for x in pub],
         "ip_key":[f"ip-{x}" for x in ip],"device":[f"device-{x}" for x in dev],
