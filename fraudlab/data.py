@@ -76,7 +76,7 @@ def load_ipinyou(sample_size=60000,max_scan=1000000,seed=42):
     from huggingface_hub import hf_hub_download
     import zipfile
     path=hf_hub_download(repo_id="reczoo/iPinYou_x1",filename="iPinYou_x1.zip",repo_type="dataset")
-    rng=np.random.default_rng(seed); held=[];total=0
+    rng=np.random.default_rng(seed); sample=None;total=0
     with zipfile.ZipFile(path) as z:
         files=[x for x in z.namelist() if x.lower().endswith("train.csv")]
         if not files:files=[x for x in z.namelist() if x.lower().endswith(".csv")]
@@ -86,10 +86,15 @@ def load_ipinyou(sample_size=60000,max_scan=1000000,seed=42):
                 if max_scan:chunk=chunk.iloc[:max(0,max_scan-total)]
                 if chunk.empty:break
                 total+=len(chunk)
-                # Deterministic priority-based bounded reservoir of chunks.
-                portion=min(len(chunk),max(100,int(sample_size*len(chunk)/max(total,len(chunk)))))
-                held.append(chunk.sample(n=portion,random_state=seed+len(held)))
+                # Uniform, deterministic streaming sample, with O(sample_size) retained rows.
+                # Every event has an independent random priority; keep the lowest K.
+                chunk=chunk.copy()
+                chunk["_sampling_key"]=rng.random(len(chunk))
+                sample=chunk if sample is None else pd.concat([sample,chunk],ignore_index=True)
+                if len(sample)>sample_size:
+                    sample=sample.nsmallest(sample_size,"_sampling_key").reset_index(drop=True)
                 if max_scan and total>=max_scan:break
-    data=pd.concat(held,ignore_index=True)
-    if len(data)>sample_size:data=data.sample(n=sample_size,random_state=seed)
+    if sample is None or sample.empty:
+        raise ValueError("No training records were found in the archive")
+    data=sample.drop(columns=["_sampling_key"]).reset_index(drop=True)
     return normalize(data,real_ipinyou=True),total
