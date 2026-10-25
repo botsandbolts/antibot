@@ -15,4 +15,4 @@ jobs:
       - name: Validate syntax
         run: python -m compileall -q app.py fraudlab
       - name: Run tests
-        run: pytest -q
+        run: python -m pytest -q
